@@ -1,0 +1,96 @@
+version: '3'
+
+services:
+
+  mariadbserver:
+    image: mariadb:10.1.26
+    environment:
+      MYSQL_ROOT_PASSWORD: my-secret-pw
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+
+  backuptarget:
+    volumes:
+      - ${PWD}/test_fixtures/id_rsa.pub:/root/.ssh/authorized_keys
+      - ${PWD}/test_fixtures/:/root/test_fixtures/
+    build:
+      context: backuptarget
+    ports:
+      - "22222:22"
+
+  backup:
+    depends_on:
+      - mariadbserver
+      - backuptarget
+    image: encrypted-backups
+    build: .
+    environment:
+      IDENTIFIER: "mybackup"
+      MYSQL_HOST: mariadbserver
+      MYSQL_USER: myuser
+      MYSQL_PASS: mypassword
+      MYSQL_DB: mydb
+      CRON_SCHEDULE: "*/15 * * * *"
+      GPG_RECIPIENT: test@example.org
+      GPG_BACKUP_PUBLIC_KEY: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
+        Version: GnuPG v1
+
+        mQENBFnBymQBCACuZChuaXrenGg8fLqk6D/u/UT2w+MlnPFDj+VgiQOqi3nRbI+K
+        827YSGa/opJFp0+2JO/WDV5b0+TUZI5Q+SxFwkjdR5qDAdJps5Ul1Ue2/9ESN/lc
+        kUEJiLbJLHpAI7tirc9eOJMsB/WMJkDuI48Ouc/zDwU+R+43PPwpXPbXT6wfTMzL
+        5zhPFzXZR6AK5omjo+6uHpsWkWNzVfHqb7YWbVfmENEhk5FsDaeGOw5WjyJU28Ql
+        LBU3ifM8cBZw8fuGmtytJ9kLGiH5NMNsPl1M85JQYD/ah1zs4+munLLiYY2qdlJ5
+        jy9+1h/Slz8FNhsjQ2IYYhHtjRcF0S2cX5jXABEBAAG0H1Rlc3QgRXhhbXBsZSA8
+        dGVzdEBleGFtcGxlLm9yZz6JATgEEwECACIFAlnBymQCGwMGCwkIBwMCBhUIAgkK
+        CwQWAgMBAh4BAheAAAoJEF/F+QsbVKpDRU4IAIDhwz7BM2kSQORZq61iKvZbhBpt
+        h7JKl8Nf98VXeBa6hc8e8qeXZALVSaMYE4BB80M9qt5sk5UVSV3ySjMmYUP7z+y9
+        zQSbYw33v8dznXLWSqT5LwFmGUuNYPyqrvTgbAaZRVB1TnQh7/t4DC1YOdgr/Z3p
+        Cv+TCulPiLyq4h0aujXQT9QDBVG5cIlR1hf+qvNtYVpoD8qw5+cv8Td/DgunO77N
+        4XHSTjs9fQnBFZh2Aq3k/MRdVCuHcxGX4knmsF/SAwn7IFHvSqtR+dRZPvZcWrUo
+        g/3yiCLPnpPuGON2ctHg2C7MQ/rB6bFlEL47dE/j5gWe2eg+jEBfN3F6aUe5AQ0E
+        WcHKZAEIALBVrVsul+rX4k361d4tyb99zdL1h7ceTMEAwU61ZZbyySd7GOKkwc66
+        tO0kLdugtxxht/txO++EWa5uVw8WxD6crxbwXIT4w+NiUKgx8plL9lxbyxVYckPv
+        TCeRlyBpA28dYmi1vKXwHHYqPdC3foJiK74pEPOmW3wwmVUlxfZRHAS7ij5BkSlR
+        Q9AxUdm/wyU0YICZtGyTBOMuGPBssWlhIyVzpilIvfwtCvunf6CVKWYiMur/M342
+        VgGABLYxybRls2s4Rzr3pzR/fjgKsCKbKkuzz39g7aHhpyqaCebGdnMHSCHuLs7R
+        iPhqt7stuOFJ0frDXSfJ+PSVs2gs7zEAEQEAAYkBHwQYAQIACQUCWcHKZAIbDAAK
+        CRBfxfkLG1SqQ7wWB/9JlKzvPjq919xPTArl904ML0a9NS48BudwU4LCdbFydwLv
+        rBTyQiF66jdWfr1Qs7MAJfF7U6ZIa0Fw0Zle8CP5aTV6wewjqraQCN1BSmJ6Kqtk
+        628pV6Tlh+ZgvltvTwaYWVCm6cSAruikUubFJjt0eojt8+/Jg6jzUPyelVxrKl5J
+        wAvDen46tKmn9Oep2A0kEQSAZZZnGVgcrYS81OAdXonaD2uk7Jd1+HOAaO52L4GX
+        ekPYQNIaY+hird66DeJvMuXoEJ7xRTFEz+PFZ1ShZXbidjJL7ywhcj/oRa35RhX7
+        1XNwuNVBx4CvPDb08Wxbc5BoRxx3wbPn8RxuPvHz
+        =iyV/
+        -----END PGP PUBLIC KEY BLOCK-----
+      SSH_PRIVATE_KEY: |
+        -----BEGIN RSA PRIVATE KEY-----
+        MIIEpAIBAAKCAQEA7mYb/ohc6B+ABHLsJNtKq8hpmbOIVUnK2WunNYeRnsWxcF57
+        +Dx4RYo0SfATeWH6iZOGRnhIMR5IqTGB6a294kz/dMKOeqKtD+Q5VSAkAyQDmsXo
+        94McP89ZAObT/aVadirSGM8aXCpgtY2xXi/7ouU6jHY1pSF3zgyUyas2kTC/ktME
+        XysMKRIbNB+jDHa8n5jw9RPm9xVhOHJifhq1S7aEAdGTnJLjHRH2MKLwZqJgaqoF
+        QFNglnW3+WT9NMXpZKUOg4WFMsFnHQWI2/0Ksi4GWlO/u+3TbmYHjOvgXOFkTyek
+        YqBc2q50+RL+2+27mbVEcFThK07hduLpbYFDxQIDAQABAoIBAQCY+gDgthQYB46Y
+        TD5n8CfcT4Aj1uaXBAEcv03Ota2l2mngF2Epi3QJ+4NOJrX4X/zqpzW0pp58llg9
+        6bzZfFmqi4opHGddHmI7HlID49n4AfYmLPUvTnykHaOZRoWl76M6zIOA0/SwS6k/
+        FytHqzan8rw9QeVujylXmQ8o0ar0Qry64Xn5L7wFKMqXFc4A8g0a8Dl+N6qXn+c5
+        2baSqUbK3Q9didk3RwFE0tNcQlXArDsRDOF2wAdTj/FxEHeuAv/C+b0jSIp2Hb+W
+        m1zb4jZEmj03BO4FmZDONBS0xLVCMWIedQoSlcP9QC2LCOHFZZw4q1L2ueIVVdmj
+        wqLNDUCBAoGBAPlqZbjWO4CLnGZ/KClq2+Zr3m/Ee95GSP+WC4gK9R4kzrnevd9E
+        PBjNDMk5j0LaENzYIElX5yDAsotTIrcTR2X6zqxqA21tB+abB7jJkDSYoNzQGpUD
+        NNkizWL5Qvptz5aNY6YBM/J/5qckvoLS4bHQbyZCm/354rE0tb29uwzxAoGBAPSx
+        Qi3GjeVcyD2TtwC38f74Mp5rO6Jgsnr4wIfOCGYGlQky7vGv6UMi9etii773EujY
+        0tc34PsoyXZydJ/eWI25xKftnrFtQtX18E1OibOwVWDay5+oU1oc0LCyn7fb3a5x
+        uKS9WCpL81YbZFGtbE6PYqhsZJ7fadU0k1OADHQVAoGALIffk4nEY+YJTY+EZyiq
+        DFDUDRaCmyPnYqKyel6idvhRZIQtWFCBflgV4VOCjYgLnLKFyTKFlKZy+kckmpU5
+        mS6XedcPt5jQ4U5qqYZrVciuZ95L8LD63Y3GJ9ajK70xZArocLokQTauwsbfsNHf
+        8/Rn8+fOnCDiZYsoq7DVVbECgYEAmmbHxa7GlvZm/EQbc/6eWy8ucbxkkt/Ff8c7
+        ZfZiYk7A+F8FW8iOvmhvGSrD16p8aiV3VYrTEmj4Rx+N69sXscaJCxXrzzWMuQpJ
+        qd5nEdWw6j7lwkcq4W/RV84+7nt0dMEZrAo2eeoXEDyUnt15vFDKBlDvZTjAxWI5
+        nLTuJskCgYB/CbcYmj6bF8/zzVebVMi4o4YntVRyb3rJ0KAQZ8P5lsfPAtX2oxYB
+        Go9sWtwqpkcADj8A9JLaPBfgqod9NdEgws63OR2IlhjVqXTEr0bfK21sICYvgaUJ
+        M5Rg0bYquKvxJ9Q6avv5q9GMAKarOBEJjEzfBaNycGYvE+6GI/6TqQ==
+        -----END RSA PRIVATE KEY-----
+      TARGET_SSH_HOST: backuptarget
+      TARGET_SSH_USER: root
